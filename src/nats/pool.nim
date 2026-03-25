@@ -3,7 +3,7 @@
 {.experimental: "strict_funcs".}
 
 import std/locks
-import lattice, conn
+import basis/code/choice, conn
 
 type
   NatsPool* = ref object

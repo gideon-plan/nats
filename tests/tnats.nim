@@ -1,7 +1,8 @@
 ## tnats.nim -- Tests for NATS protocol codec (no live server needed).
 {.experimental: "strict_funcs".}
 import std/[unittest, strutils]
-import nats/[proto, jetstream, lattice]
+import basis/code/choice
+import nats/[proto, jetstream]
 
 suite "proto encode":
   test "encode PING":

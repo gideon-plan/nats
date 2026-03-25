@@ -3,7 +3,7 @@
 {.experimental: "strict_funcs".}
 
 import std/atomics
-import lattice, proto, conn
+import basis/code/choice, proto, conn
 
 type
   MsgHandler* = proc(subject, reply, payload: string) {.gcsafe, raises: [].}

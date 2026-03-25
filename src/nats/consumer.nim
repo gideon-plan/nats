@@ -3,7 +3,7 @@
 {.experimental: "strict_funcs".}
 
 import std/json
-import lattice, proto, conn, pub
+import basis/code/choice, proto, conn, pub
 
 type
   PullConsumer* = object
@@ -21,7 +21,7 @@ proc new_pull_consumer*(c: NatsConn, stream, consumer_name: string): PullConsume
   PullConsumer(conn: c, stream: stream, consumer_name: consumer_name,
                fetch_subject: "$JS.API.CONSUMER.MSG.NEXT." & stream & "." & consumer_name)
 
-proc fetch*(pc: PullConsumer, batch: int = 1): Result[seq[FetchedMsg], NatsError] =
+proc fetch*(pc: PullConsumer, batch: int = 1): Choice[seq[FetchedMsg]] =
   ## Request a batch of messages from the pull consumer.
   let payload = $(%*{"batch": batch})
   let inbox = next_inbox()
@@ -37,9 +37,9 @@ proc fetch*(pc: PullConsumer, batch: int = 1): Result[seq[FetchedMsg], NatsError
                             reply: resp.msg_reply))
       else:
         break
-    Result[seq[FetchedMsg], NatsError].good(msgs)
+    good(msgs)
   except NatsError as e:
-    Result[seq[FetchedMsg], NatsError].bad(e[])
+    bad[seq[FetchedMsg]]("nats", e.msg)
 
 proc ack*(pc: PullConsumer, msg: FetchedMsg) {.raises: [NatsError].} =
   if msg.reply.len > 0:

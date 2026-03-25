@@ -3,7 +3,7 @@
 {.experimental: "strict_funcs".}
 
 import std/atomics
-import lattice, proto, conn
+import basis/code/choice, proto, conn
 
 var inbox_counter {.global.}: Atomic[int]
 
@@ -18,7 +18,7 @@ proc publish*(c: NatsConn, subject: string, payload: string,
   send_msg(c, msg)
 
 proc request*(c: NatsConn, subject: string, payload: string,
-              timeout_ms: int = 5000): Result[string, NatsError] =
+              timeout_ms: int = 5000): Choice[string] =
   ## Send request and wait for reply on auto-generated inbox.
   let inbox = next_inbox()
   let sub_msg = NatsMsg(kind: nmkSub, sub_subject: inbox, sub_sid: "req_1")
@@ -29,8 +29,8 @@ proc request*(c: NatsConn, subject: string, payload: string,
     publish(c, subject, payload, inbox)
     let resp = recv_msg(c)
     if resp.kind == nmkMsg:
-      Result[string, NatsError].good(resp.msg_payload)
+      good(resp.msg_payload)
     else:
-      Result[string, NatsError].bad(NatsError(msg: "unexpected response: " & $resp.kind))
+      bad[string]("nats", "unexpected response: " & $resp.kind)
   except NatsError as e:
-    Result[string, NatsError].bad(e[])
+    bad[string]("nats", e.msg)

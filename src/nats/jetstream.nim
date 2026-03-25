@@ -5,7 +5,7 @@
 {.experimental: "strict_funcs".}
 
 import std/json
-import lattice, conn, pub
+import basis/code/choice, conn, pub
 
 type
   StreamConfig* = object
@@ -42,15 +42,15 @@ proc consumer_config_json*(cfg: ConsumerConfig): string =
     "deliver_policy": cfg.deliver_policy
   })
 
-proc create_stream*(c: NatsConn, cfg: StreamConfig): Result[string, NatsError] =
+proc create_stream*(c: NatsConn, cfg: StreamConfig): Choice[string] =
   request(c, "$JS.API.STREAM.CREATE." & cfg.name, stream_config_json(cfg))
 
-proc delete_stream*(c: NatsConn, name: string): Result[string, NatsError] =
+proc delete_stream*(c: NatsConn, name: string): Choice[string] =
   request(c, "$JS.API.STREAM.DELETE." & name, "")
 
-proc create_consumer*(c: NatsConn, stream: string, cfg: ConsumerConfig): Result[string, NatsError] =
+proc create_consumer*(c: NatsConn, stream: string, cfg: ConsumerConfig): Choice[string] =
   request(c, "$JS.API.CONSUMER.CREATE." & stream & "." & cfg.durable_name,
           consumer_config_json(cfg))
 
-proc delete_consumer*(c: NatsConn, stream, consumer: string): Result[string, NatsError] =
+proc delete_consumer*(c: NatsConn, stream, consumer: string): Choice[string] =
   request(c, "$JS.API.CONSUMER.DELETE." & stream & "." & consumer, "")

@@ -5,7 +5,7 @@
 {.experimental: "strict_funcs".}
 
 import std/strutils
-import lattice
+import basis/code/choice
 
 type
   NatsMsgKind* = enum
@@ -82,29 +82,29 @@ proc encode*(msg: NatsMsg): string =
 # Decode
 # =====================================================================================================================
 
-proc decode_line*(line: string): Result[NatsMsg, NatsError] =
+proc decode_line*(line: string): Choice[NatsMsg] =
   ## Decode a single NATS protocol line (without payload).
   let trimmed = line.strip()
   if trimmed == "PING":
-    return Result[NatsMsg, NatsError].good(NatsMsg(kind: nmkPing))
+    return good(NatsMsg(kind: nmkPing))
   if trimmed == "PONG":
-    return Result[NatsMsg, NatsError].good(NatsMsg(kind: nmkPong))
+    return good(NatsMsg(kind: nmkPong))
   if trimmed == "+OK":
-    return Result[NatsMsg, NatsError].good(NatsMsg(kind: nmkOk))
+    return good(NatsMsg(kind: nmkOk))
   if trimmed.startsWith("-ERR"):
     let msg = if trimmed.len > 5: trimmed[5..^1].strip().strip(chars = {'\'', '"'}) else: ""
-    return Result[NatsMsg, NatsError].good(NatsMsg(kind: nmkErr, err_msg: msg))
+    return good(NatsMsg(kind: nmkErr, err_msg: msg))
   if trimmed.startsWith("INFO "):
-    return Result[NatsMsg, NatsError].good(
+    return good(
       NatsMsg(kind: nmkInfo, info_json: trimmed[5..^1]))
   if trimmed.startsWith("MSG "):
     let parts = trimmed[4..^1].strip().split(' ')
     if parts.len == 3:
-      return Result[NatsMsg, NatsError].good(
+      return good(
         NatsMsg(kind: nmkMsg, msg_subject: parts[0], msg_sid: parts[1],
                 msg_payload: ""))  # payload read separately
     elif parts.len == 4:
-      return Result[NatsMsg, NatsError].good(
+      return good(
         NatsMsg(kind: nmkMsg, msg_subject: parts[0], msg_sid: parts[1],
                 msg_reply: parts[2], msg_payload: ""))
-  Result[NatsMsg, NatsError].bad(NatsError(msg: "unknown NATS message: " & trimmed))
+  bad[NatsMsg]("nats", "unknown NATS message: " & trimmed)

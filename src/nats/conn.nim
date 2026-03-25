@@ -3,7 +3,11 @@
 {.experimental: "strict_funcs".}
 
 import std/[net, strutils]
-import lattice, proto
+
+type
+  NatsError* = object of CatchableError
+
+import basis/code/choice, proto
 
 type
   NatsConn* = ref object
