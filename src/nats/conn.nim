@@ -91,3 +91,9 @@ proc ping*(conn: NatsConn) {.raises: [NatsError].} =
 proc close_nats*(conn: NatsConn) {.raises: [].} =
   if conn != nil and conn.sock != nil:
     try: conn.sock.close() except CatchableError: discard
+
+proc try_open_nats*(host: string, port: int = 4222, verbose: bool = false,
+                    name: string = "gideon-nats"): Choice[NatsConn] =
+  ## Connect to a NATS server, returning Choice instead of raising.
+  try: good(open_nats(host, port, verbose, name))
+  except NatsError as e: bad[NatsConn]("nats", e.msg)

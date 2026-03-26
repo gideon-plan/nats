@@ -41,3 +41,8 @@ proc close_pool*(pool: NatsPool) {.raises: [].} =
   release(pool.lock)
   deinitLock(pool.lock)
   deinitCond(pool.cond)
+
+proc try_new_nats_pool*(size: int, host: string, port: int = 4222): Choice[NatsPool] =
+  ## Create a NATS connection pool, returning Choice instead of raising.
+  try: good(new_nats_pool(size, host, port))
+  except NatsError as e: bad[NatsPool]("nats", e.msg)
