@@ -2,7 +2,6 @@
 
 {.experimental: "strict_funcs".}
 
-import std/json
 import basis/code/choice, proto, conn, pub
 
 type
@@ -23,7 +22,7 @@ proc new_pull_consumer*(c: NatsConn, stream, consumer_name: string): PullConsume
 
 proc fetch*(pc: PullConsumer, batch: int = 1): Choice[seq[FetchedMsg]] =
   ## Request a batch of messages from the pull consumer.
-  let payload = $(%*{"batch": batch})
+  let payload = "{\"batch\":" & $batch & "}"
   let inbox = next_inbox()
   try:
     send_msg(pc.conn, NatsMsg(kind: nmkSub, sub_subject: inbox, sub_sid: "fetch_1"))

@@ -4,7 +4,7 @@
 
 {.experimental: "strict_funcs".}
 
-import std/json
+import jsony
 import basis/code/choice, conn, pub
 
 type
@@ -23,24 +23,30 @@ type
     ack_policy*: string     ## "explicit", "none", "all"
     deliver_policy*: string ## "all", "new", "last"
 
+proc dumpHook*(s: var string; v: StreamConfig) =
+  ## Serialize StreamConfig; omit max_msgs/max_bytes when zero.
+  s.add '{'
+  s.add "\"name\":"; s.dumpHook(v.name)
+  s.add ",\"subjects\":"; s.dumpHook(v.subjects)
+  s.add ",\"retention\":"; s.dumpHook(v.retention)
+  s.add ",\"storage\":"; s.dumpHook(v.storage)
+  if v.max_msgs > 0:
+    s.add ",\"max_msgs\":"; s.dumpHook(v.max_msgs)
+  if v.max_bytes > 0:
+    s.add ",\"max_bytes\":"; s.dumpHook(v.max_bytes)
+  s.add '}'
+
 proc stream_config_json*(cfg: StreamConfig): string =
-  var j = %*{
-    "name": cfg.name,
-    "subjects": cfg.subjects,
-    "retention": cfg.retention,
-    "storage": cfg.storage
-  }
-  if cfg.max_msgs > 0: j["max_msgs"] = %cfg.max_msgs
-  if cfg.max_bytes > 0: j["max_bytes"] = %cfg.max_bytes
-  $j
+  cfg.toJson()
 
 proc consumer_config_json*(cfg: ConsumerConfig): string =
-  $(%*{
-    "durable_name": cfg.durable_name,
-    "filter_subject": cfg.filter_subject,
-    "ack_policy": cfg.ack_policy,
-    "deliver_policy": cfg.deliver_policy
-  })
+  var s = "{"
+  s.add "\"durable_name\":"; s.dumpHook(cfg.durable_name)
+  s.add ",\"filter_subject\":"; s.dumpHook(cfg.filter_subject)
+  s.add ",\"ack_policy\":"; s.dumpHook(cfg.ack_policy)
+  s.add ",\"deliver_policy\":"; s.dumpHook(cfg.deliver_policy)
+  s.add '}'
+  s
 
 proc create_stream*(c: NatsConn, cfg: StreamConfig): Choice[string] =
   request(c, "$JS.API.STREAM.CREATE." & cfg.name, stream_config_json(cfg))
