@@ -25,13 +25,13 @@ proc fetch*(pc: PullConsumer, batch: int = 1): Choice[seq[FetchedMsg]] =
   let payload = "{\"batch\":" & $batch & "}"
   let inbox = next_inbox()
   try:
-    send_msg(pc.conn, NatsMsg(kind: nmkSub, sub_subject: inbox, sub_sid: "fetch_1"))
-    send_msg(pc.conn, NatsMsg(kind: nmkUnsub, unsub_sid: "fetch_1", unsub_max: batch))
+    send_msg(pc.conn, NatsMsg(kind: NatsMsgKind.Sub, sub_subject: inbox, sub_sid: "fetch_1"))
+    send_msg(pc.conn, NatsMsg(kind: NatsMsgKind.Unsub, unsub_sid: "fetch_1", unsub_max: batch))
     publish(pc.conn, pc.fetch_subject, payload, inbox)
     var msgs: seq[FetchedMsg]
     for i in 0 ..< batch:
       let resp = recv_msg(pc.conn)
-      if resp.kind == nmkMsg:
+      if resp.kind == NatsMsgKind.Msg:
         msgs.add(FetchedMsg(subject: resp.msg_subject, payload: resp.msg_payload,
                             reply: resp.msg_reply))
       else:

@@ -19,12 +19,12 @@ proc new_sub*(c: NatsConn, subject: string, sid: string,
               queue: string = ""): NatsSub {.raises: [NatsError].} =
   result = NatsSub(conn: c, subject: subject, queue: queue, sid: sid)
   result.running.store(true)
-  let msg = NatsMsg(kind: nmkSub, sub_subject: subject,
+  let msg = NatsMsg(kind: NatsMsgKind.Sub, sub_subject: subject,
                     sub_queue: queue, sub_sid: sid)
   send_msg(c, msg)
 
 proc unsubscribe*(s: NatsSub) {.raises: [NatsError].} =
-  send_msg(s.conn, NatsMsg(kind: nmkUnsub, unsub_sid: s.sid))
+  send_msg(s.conn, NatsMsg(kind: NatsMsgKind.Unsub, unsub_sid: s.sid))
 
 proc stop*(s: NatsSub) =
   s.running.store(false)
@@ -35,10 +35,10 @@ proc run_loop*(s: NatsSub, handler: MsgHandler) {.raises: [].} =
     let msg = try: recv_msg(s.conn)
               except NatsError: break
     case msg.kind
-    of nmkMsg:
+    of NatsMsgKind.Msg:
       handler(msg.msg_subject, msg.msg_reply, msg.msg_payload)
-    of nmkPing:
-      try: send_msg(s.conn, NatsMsg(kind: nmkPong))
+    of NatsMsgKind.Ping:
+      try: send_msg(s.conn, NatsMsg(kind: NatsMsgKind.Pong))
       except NatsError: break
     else:
       discard
